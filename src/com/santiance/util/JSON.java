@@ -18,23 +18,49 @@ import java.util.Map;
  * @author Kristopher Ives <kristopher.ives@gmail.com>
  */
 public abstract class JSON {
-//	public abstract static class Value {
-		public boolean isString() {
-			return (this instanceof StringValue);
+	public boolean isString() {
+		return (this instanceof StringValue);
+	}
+	
+	public String asString() {
+		return toString();
+	}
+	
+	public boolean isNumber() {
+		return (this instanceof NumberValue);
+	}
+	
+	public int asInt() {
+		if (isNumber()) {
+			NumberValue number = (NumberValue)this;
+			
+			return (Integer)number.value;
+		} else if (isString()) {
+			try {
+				return Integer.parseInt(asString());
+			} catch (Exception e) {
+				return 0;
+			}
 		}
 		
-		public boolean isNumber() {
-			return (this instanceof NumberValue);
+		return 0;
+	}
+	
+	public boolean isArray() {
+		return (this instanceof ArrayValue);
+	}
+	
+	public boolean isMap() {
+		return (this instanceof MapValue);
+	}
+	
+	public MapValue asMap() {
+		if (this instanceof MapValue) {
+			return (MapValue)this;
 		}
 		
-		public boolean isArray() {
-			return (this instanceof ArrayValue);
-		}
-		
-		public boolean isMap() {
-			return (this instanceof MapValue);
-		}
-//	}
+		return null;
+	}
 	
 	/** Parse a JSON value from a String */
 	public static JSON parse(String src, int pos) throws ParseException {
@@ -173,6 +199,7 @@ public abstract class JSON {
 		throw new ParseException("Expected '\"' not end of data", c.pos);
 	}
 	
+	/** Parse an ArrayValue ( eg: <code>[1,2,3,...]</code> ) */
 	public static JSON.ArrayValue parseArray(ParseContext c) throws ParseException {
 		final LinkedList<JSON> values = new LinkedList<JSON>();
 		
@@ -240,10 +267,8 @@ public abstract class JSON {
 		return new JSON.MapValue.Entry(key, value);
 	}
 	
-
-	
-	
 	/* ----- ----- JSON Value Type Classes ------ ----- */
+	
 	public static class StringValue extends JSON {
 		public String value;
 		
