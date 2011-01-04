@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -18,6 +19,12 @@ import java.util.Map;
  * @author Kristopher Ives <kristopher.ives@gmail.com>
  */
 public abstract class JSON {
+	public abstract String toString(String indentChar, String currentIndent);
+	
+	@Override public String toString() {
+		return toString("\t", "");
+	}
+	
 	public boolean isString() {
 		return (this instanceof StringValue);
 	}
@@ -276,7 +283,7 @@ public abstract class JSON {
 			this.value = value;
 		}
 		
-		public String toString() {
+		public String toString(String indentChar, String currentIndent) {
 			return "\"" + this.value + "\"";
 		}
 		
@@ -302,6 +309,16 @@ public abstract class JSON {
 			this.value = value;
 		}
 		
+		public String toString(String indentChar, String currentIndent) {
+			if (isInt()) {
+				return String.valueOf((Integer)value);
+			} else if (isFloat()) {
+				return String.valueOf((Float)value);
+			}
+			
+			return "0";
+		}
+		
 		public boolean isInt() {
 			return (value instanceof Integer);
 		}
@@ -312,7 +329,9 @@ public abstract class JSON {
 	}
 	
 	public static class NullValue extends JSON {
-		
+		public String toString(String indentChar, String currentIndent) {
+			return "null";
+		}
 	}
 	
 	public static class MapValue extends JSON implements Iterable<MapValue.Entry> {
@@ -327,6 +346,29 @@ public abstract class JSON {
 				this.key = key;
 				this.value = value;
 			}
+		}
+		
+		public String toString(String indentChar, String currentIndent) {
+			final StringBuilder buf = new StringBuilder("{\n");
+			final String tab = currentIndent.concat(indentChar);
+			int i = 0;
+			
+			for (MapValue.Entry entry : this) {
+				if (i > 0) {
+					buf.append(",\n");
+				}
+				
+				buf.append(tab).append('"').append(entry.key).append("\": ");
+				buf.append(entry.value.toString(indentChar, tab));
+				
+				i++;
+			}
+			
+			if (i > 0) {
+				buf.append("\n");
+			}
+			
+			return buf.append(currentIndent).append("}\n").toString();
 		}
 		
 		public Iterator<MapValue.Entry> iterator() {
@@ -356,17 +398,45 @@ public abstract class JSON {
 	}
 	
 	/** A JSON array of values ( eg; <code>[1, 2, 3, ... ]</code> ) */
-	public static class ArrayValue extends JSON {
-		final JSON[] values;
+	public static class ArrayValue extends JSON implements Iterable<JSON> {
+		protected final List<JSON> values;
 		
 		public ArrayValue(JSON[] values) {
-			this.values = values;
+			this.values = Arrays.asList(values);
 		}
 		
 		public ArrayValue(List<JSON> list) {
-			this.values = new JSON[list.size()];
-			list.toArray(this.values);
+			this.values = list;
 		}
+		
+		public Iterator<JSON> iterator() {
+			return values.iterator();
+		}
+		
+		@Override public String toString(String indentChar, String currentIndent) {
+			final StringBuilder buf = new StringBuilder("[\n");
+			final String tab = currentIndent.concat(indentChar);
+			int i = 0;
+			
+			for (JSON value : this) {
+				if (i > 0) {
+					buf.append(",\n");
+				}
+				
+				buf.append(tab).append(value.toString(indentChar, tab));
+				i++;
+			}
+			
+			if (i > 0) {
+				buf.append("\n");
+			}
+			
+			return buf.append(currentIndent).append("]").toString();
+		}
+	}
+	
+	protected static class OutputContext {
+		String indent;
 	}
 	
 	/** Abstract context of the parser (doesn't seek) */

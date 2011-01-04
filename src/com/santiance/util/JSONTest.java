@@ -21,6 +21,8 @@ public class JSONTest {
 		
 		dir = new File(dirPath);
 		
+		System.out.println("Parsing tests...");
+		
 		for (File file : dir.listFiles()) {
 			String result;
 			JSON value;
@@ -37,6 +39,8 @@ public class JSONTest {
 			System.out.print(result);
 			System.out.println(file.getName());
 		}
+		
+		System.out.println("Running tests...");
 		
 		JSON obj = values.get("BasicObject.json");
 		
@@ -55,6 +59,8 @@ public class JSONTest {
 			System.out.print(FAIL);
 			System.out.println("Hello world string didn't match: " + values.get("HelloWorld.json"));
 		}
+		
+		System.out.println("Done");
 	}
 	
 	public static JSON testFile(File file) throws Exception {
