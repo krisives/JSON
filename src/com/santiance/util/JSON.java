@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -66,6 +67,38 @@ public abstract class JSON {
 			return (MapValue)this;
 		}
 		
+		return null;
+	}
+	
+	public static JSON valueOf(Object obj) {
+		if (obj == null) {
+			return VALUE_NULL;
+		}
+		
+		if (obj instanceof String) {
+			return new StringValue((String)obj);
+		} else if (obj instanceof Integer) {
+			return new NumberValue((Integer)obj);
+		} else if (obj instanceof Float) {
+			return new NumberValue((Float)obj);
+		} else if (obj.getClass().isArray()) {
+			Object[] objArray = (Object[])obj;
+			ArrayList<JSON> list = new ArrayList<JSON>();
+			
+			for (Object item : objArray) {
+				final JSON arrayItem = valueOf(item);
+				
+				if (arrayItem == null) {
+					return null;
+				}
+				
+				list.add(arrayItem);
+			}
+			
+			return new ArrayValue(list);
+		}
+		
+		// Unknown object
 		return null;
 	}
 	
@@ -375,7 +408,17 @@ public abstract class JSON {
 			return list.iterator();
 		}
 		
-		public void put(Entry entry) {
+		public Entry put(String key, Object obj) {
+			final JSON value = JSON.valueOf(obj);
+			
+			if (obj == null) {
+				return null;
+			}
+			
+			return put(new Entry(key, value));
+		}
+		
+		public Entry put(Entry entry) {
 			Entry existing = table.get(entry.key);
 			
 			if (existing != null) {
@@ -384,6 +427,8 @@ public abstract class JSON {
 			
 			table.put(entry.key, entry);
 			list.add(entry);
+			
+			return entry;
 		}
 		
 		public JSON get(String key) {
@@ -623,4 +668,6 @@ public abstract class JSON {
 	private static void expected(ParseContext c, char good) throws ParseException {
 		expected(c, good, c.peek());
 	}
+	
+	public static final JSON.NullValue VALUE_NULL = new JSON.NullValue() ;
 }
